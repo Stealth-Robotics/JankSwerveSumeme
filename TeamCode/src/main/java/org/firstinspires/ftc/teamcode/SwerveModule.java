@@ -9,6 +9,6 @@ public class SwerveModule {
 
     public SwerveModule(DcMotor driveMotor, DcMotor serveMotor, AnalogInput potentiometer)
     {
-        
+
     }
 }
