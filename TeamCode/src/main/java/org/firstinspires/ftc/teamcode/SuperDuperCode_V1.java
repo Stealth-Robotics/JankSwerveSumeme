@@ -52,9 +52,4 @@ public class SuperDuperCode_V1 extends OpMode
     @Override
     public void stop() {
     }
-
-    private void rotateToDegree(DcMotor motor, double degree)
-    {
-
-    }
 }
