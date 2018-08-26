@@ -10,8 +10,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="SuperDuperOpMode_V1", group="Iterative Opmode")
 public class SuperDuperCode_V1 extends OpMode
 {
-    final int TICKS_PER_REV = 1124;
-
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor frontSwerve;
