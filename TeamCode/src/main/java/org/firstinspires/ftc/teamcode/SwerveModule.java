@@ -10,6 +10,8 @@ public class SwerveModule {
 
     private double swervePower = 0.5;
 
+    private boolean driveReverse = false;
+
     private int zeroDegreePosition;
 
     final double MAX_POTENTIOMETER_VOLTAGE = 3.3;
@@ -20,7 +22,11 @@ public class SwerveModule {
 
     final double VOLTAGE_TO_TICKS_FACTOR = TICKS_PER_REV / MAX_POTENTIOMETER_VOLTAGE;
 
-    public SwerveModule(DcMotor driveMotor, DcMotor swerveMotor, AnalogInput potentiometer)
+    final double GEAR_RATIO = 1;
+
+    private SwerveDrive swerveDrive;
+
+    public SwerveModule(DcMotor driveMotor, DcMotor swerveMotor, AnalogInput potentiometer, SwerveDrive swerveDrive)
     {
         this.driveMotor = driveMotor;
         this.driveMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -28,27 +34,42 @@ public class SwerveModule {
         this.swerveMotor = swerveMotor;
         this.swerveMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        zeroDegreePosition = (int)(-potentiometer.getVoltage() * VOLTAGE_TO_TICKS_FACTOR);
+        zeroDegreePosition = (int)(-potentiometer.getVoltage() * VOLTAGE_TO_TICKS_FACTOR / GEAR_RATIO);
+
+        this.swerveDrive = swerveDrive;
     }
 
     public void rotateByDegree(int angle)
     {
         swerveMotor.setPower(swervePower);
+
         int currentTicks = swerveMotor.getCurrentPosition();
-        int targetTicks = currentTicks + angle * DEGREE_TO_TICKS_FACTOR;
+        int targetTicks = (int)(currentTicks + angle * DEGREE_TO_TICKS_FACTOR * GEAR_RATIO);
         swerveMotor.setTargetPosition(targetTicks);
     }
 
     public void rotateToDegree(int angle)
     {
         int angleDiff = (angle - getCurrentAngle()) % 360;
-        if (angleDiff > 180)
+        if (angleDiff > 270)
         {
             angleDiff -= 360;
+            driveReverse = false;
+        }
+        else if (angleDiff > 180)
+        {
+            angleDiff -= 180;
+            driveReverse = true;
+        }
+        else if (angleDiff < - 270)
+        {
+            angleDiff += 360;
+            driveReverse = false;
         }
         else if (angleDiff < -180)
         {
-            angleDiff += 360;
+            angleDiff += 180;
+            driveReverse = true;
         }
 
         rotateByDegree(angleDiff);
@@ -61,7 +82,7 @@ public class SwerveModule {
 
     public int getCurrentAngle()
     {
-        return (swerveMotor.getCurrentPosition() - zeroDegreePosition) * TICKS_TO_DEGREE_FACTOR;
+        return (int)((swerveMotor.getCurrentPosition() - zeroDegreePosition) * TICKS_TO_DEGREE_FACTOR / GEAR_RATIO + swerveDrive.getHeading());
     }
 
     public void setDriveMode(DcMotor.RunMode mode)
@@ -71,7 +92,7 @@ public class SwerveModule {
 
     public void setDrivePower(double power)
     {
-        driveMotor.setPower(power);
+        driveMotor.setPower((driveReverse) ? -power : power);
     }
 
     public int getDrivePosition()
