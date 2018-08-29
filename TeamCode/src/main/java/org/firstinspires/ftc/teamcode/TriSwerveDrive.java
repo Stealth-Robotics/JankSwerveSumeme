@@ -8,11 +8,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
-public class TriSwerveDrive implements SwerveDrive, Runnable {
+public class TriSwerveDrive implements Runnable {
 
-    private SwerveModule module1;
-    private SwerveModule module2;
-    private SwerveModule module3;
+    private SwerveModule[] modules;
     BNO055IMU imu;
 
     double speed;
@@ -29,9 +27,10 @@ public class TriSwerveDrive implements SwerveDrive, Runnable {
             BNO055IMU imu
             )
     {
-        module1 = new SwerveModule(drive1, swerve1, potentiometer1, this);
-        module2 = new SwerveModule(drive2, swerve2, potentiometer2, this);
-        module3 = new SwerveModule(drive3, swerve3, potentiometer3, this);
+        modules = new SwerveModule[3];
+        modules[0] = new SwerveModule(drive1, swerve1, potentiometer1, 0, 18);
+        modules[1] = new SwerveModule(drive2, swerve2, potentiometer2, 120, 18);
+        modules[2] = new SwerveModule(drive3, swerve3, potentiometer3, -120, 18);
 
         this.imu = imu;
 
@@ -46,11 +45,25 @@ public class TriSwerveDrive implements SwerveDrive, Runnable {
 
     public void setRot(double rotSpeed)
     {
+        if (rotSpeed + this.speed > 1)
+        {
+            double speedFactor = 1 / (rotSpeed + this.speed);
+            setSpeed(this.speed * speedFactor);
+            rotSpeed *= speedFactor;
+        }
+
         this.rotSpeed = rotSpeed;
     }
 
     public void setSpeed(double speed)
     {
+        if (speed + this.rotSpeed > 1)
+        {
+            double speedFactor = 1 / (speed + this.rotSpeed);
+            setRot(this.rotSpeed * speedFactor);
+            speed *= speedFactor;
+        }
+
         this.speed = speed;
     }
 
@@ -68,16 +81,24 @@ public class TriSwerveDrive implements SwerveDrive, Runnable {
 
     public void setMode(DcMotor.RunMode mode)
     {
-        module1.setDriveMode(mode);
-        module2.setDriveMode(mode);
-        module3.setDriveMode(mode);
+        for (SwerveModule module : modules)
+        {
+            module.setDriveMode(mode);
+        }
 
         this.mode = mode;
     }
 
-    @Override
-    public double getHeading()
+    public double[] findNextVector(SwerveModule module)
     {
-        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).firstAngle;
+        //definately not complete, do not pay attention to this
+        //am going to finish it, but am tired and going to bed
+
+        double xCoord = module.distFromCenter * Math.cos(rotSpeed / module.distFromCenter) + xSpeed;
+        double yCoord = module.distFromCenter * Math.sin(rotSpeed / module.distFromCenter) + ySpeed;
+        double[] vector = new double[2];
+        vector[0] = Math.sqrt(xCoord * xCoord + yCoord * yCoord);
+        vector[1] = yCoord / xCoord;
+        return vector;
     }
 }
