@@ -40,7 +40,36 @@ public class TriSwerveDrive implements Runnable {
     @Override
     public void run()
     {
+        if (speed != 0)
+        {
+            double angle;
+            if (xSpeed != 0)
+            {
+                angle = Math.atan(ySpeed / xSpeed);
+            }
+            else
+            {
+                angle = (ySpeed >= 0) ? 90 : -90;
+            }
 
+            for (SwerveModule module : modules)
+            {
+                module.rotateToDegree(angle);
+                module.setDrivePower(speed);
+            }
+        }
+        else if (rotSpeed != 0)
+        {
+            for (SwerveModule module : modules)
+            {
+                module.rotateToDegree(module.angleFromCenter - 90);
+                module.setDrivePower(rotSpeed);
+            }
+        }
+        else
+        {
+
+        }
     }
 
     public void setRot(double rotSpeed)
