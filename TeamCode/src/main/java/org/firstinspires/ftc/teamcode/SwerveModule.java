@@ -20,6 +20,7 @@ public class SwerveModule {
     private final double DEGREE_TO_TICKS_FACTOR = TICKS_PER_REV / 360.0;
 
     private final double VOLTAGE_TO_DEGREE_FACTOR = 360.0 / MAX_POTENTIOMETER_VOLTAGE;
+    private double voltageOffset = 0.0;
 
     private final double GEAR_RATIO = 1;
 
@@ -78,7 +79,7 @@ public class SwerveModule {
             driveMotor.setDirection(driveReverse ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         }
         //now we only will rotate a minimum of 90 degrees in either direction,
-        //reversing the motor if we need to do so.
+        //   reversing the motor if we need to do so.
         rotateByDegree(angleDiff);
     }
 
@@ -87,9 +88,14 @@ public class SwerveModule {
         swervePower = power;
     }
 
+    public void zeroSwerveAngle() { voltageOffset = potentiometer.getVoltage(); }
+
     public double getCurrentAngle()
     {
-        return potentiometer.getVoltage() * VOLTAGE_TO_DEGREE_FACTOR;
+        double positionalVoltage = potentiometer.getVoltage() - voltageOffset;
+        if(positionalVoltage < 0)
+            positionalVoltage += MAX_POTENTIOMETER_VOLTAGE;
+        return positionalVoltage * VOLTAGE_TO_DEGREE_FACTOR;
     }
 
     public void setDriveMode(DcMotor.RunMode mode)
