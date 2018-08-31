@@ -80,6 +80,8 @@ public class TriSwerveDrive implements Runnable {
 
     public void update(double x, double y, double turnX){
         //assume joystick deadzone is already dealt with
+        //whether you use this function or not, keep the comments. the judges will love this
+        //this math is based on the whitepaper at https://team1640.com/wiki/images/3/3e/Tribot_white_paper.pdf
         //let's define some numbers.
 
         //the swerve pivot setpoints
@@ -104,6 +106,9 @@ public class TriSwerveDrive implements Runnable {
         double[] deltas = new double[3];
         //this is the distance to centerpoint around the snake turn
         //we don't actually perform that motion but we pretend we are
+        //calculate here: r_cp = h/tan(delta_cl)
+        //h is the distance from the center of the robot to the pivot point of each swerve
+        //keep in mind that java's trig functions use radians
         double r_cp = 0;
         //these are the distances from the individual wheels to the centerpoint
         double[] rs = new double[3];
@@ -123,7 +128,43 @@ public class TriSwerveDrive implements Runnable {
         }
         else{
             //all other math lives here!
-            //it's getting a little late for me so i'll fill in some more stuff tomorrow morning
+            //first step: we ALWAYS do the crab math.
+            //set the pivot angles to face the joystick direction
+            alphas[0] = gamma + phi;
+            alphas[1] = gamma + phi - 120;
+            alphas[2] = gamma + phi - 240;
+            //all drives receive equal power in crab mode
+            for(int i = 0; i < 3; i++){
+                pows[i] = pow;
+            }
+            //next step: if we have turn power, perform our ocelot twist
+            if(delta_cl != 0) {
+                //we already calculated gammas for each module.
+                for(int i = 0; i < 3; i++){
+                    //we need to calculate turn radii for each swerve
+                    //rs[i] = h * sqrt(1 + 1/tan^2(delta_cl) - 2 * sin(gammas[i])/tan(delta_cl))
+                    //we can then calculate the drive power for each wheel
+                    //r_max is the largest turn radius of the 3
+                    //pows[i] = pow * rs[i]/r_max
+                    //our final step is to calculate the turn correction
+                    //remember that java uses radians but we want degrees
+                    //deltas[i] = sign(delta_cl) * asin(h * cos(gammas[i]) / rs[i])
+                    //then we can apply this correction
+                    alphas[i] += deltas[i];
+                }
+            }
+            //finally, whether we did ocelot math, we need to ensure our angle is in the range 0 to 360
+            //and then apply all of our numbers to the swerves
+            for(int i = 0; i < 3; i++){
+                if(alphas[i] < 0){
+                    alphas[i] += 360;
+                }
+                else if(alphas[i] > 360){
+                    alphas[i] -= 360;
+                }
+                modules[i].rotateToDegree(alphas[i]);
+                modules[i].setDrivePower(pows[i]);
+            }
         }
     }
 
