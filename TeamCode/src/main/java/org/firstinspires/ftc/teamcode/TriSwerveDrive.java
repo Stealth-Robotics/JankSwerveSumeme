@@ -40,8 +40,14 @@ public class TriSwerveDrive implements Runnable {
     @Override
     public void run()
     {
+        //if the goal is to call this every loop anyway, rather than implementing Runnable,
+        //i would just make a drive function. we need 3 inputs: left x, left y, and right x
+        //ideally the deadzone handling would be done beforehand. i have made this function for my comments
+        //feel free to remove it if you don't want to do it that way
+
         if (rotSpeed == 0)
         {
+            //double check this crab math. I've fixed it up some in TestSwerveModule
             double angle;
             if (xSpeed != 0)
             {
@@ -69,6 +75,55 @@ public class TriSwerveDrive implements Runnable {
         else
         {
 
+        }
+    }
+
+    public void update(double x, double y, double turnX){
+        //assume joystick deadzone is already dealt with
+        //let's define some numbers.
+
+        //the swerve pivot setpoints
+        double[] alphas = new double[3];
+        //this is the base drive power for crab mode, given by joystick. calculate here
+        //reference TestSwerveModule as needed
+        double pow = 0;
+        //this is the angle of primary joystick. calculate here (make sure to convert to degrees)
+        //reference TestSwerveModule as needed
+        double gamma = 0;
+        //this is the orientation of the robot. make sure it is constrained to the range 0-360
+        double phi = getHeading();
+        //these are for ocelot twists.
+        //this describes the offset of each swerve pivot from the vector of motion
+        double[] gammas = new double[] {-phi - gamma, 120 - phi - gamma, 240 - phi - gamma};
+        //this is the turn angle of the fictional reference CL wheel.
+        //this wheel lies along the vector of motion the same distance from the center as the other wheels
+        //we constrain its turn from -45 to 45 mostly because it makes the math nice
+        //it keeps the turn centerpoint outside of the robot
+        double delta_cl = turnX * 45;
+        //these are the angular correction needed to perform the ocelot twist
+        double[] deltas = new double[3];
+        //this is the distance to centerpoint around the snake turn
+        //we don't actually perform that motion but we pretend we are
+        double r_cp = 0;
+        //these are the distances from the individual wheels to the centerpoint
+        double[] rs = new double[3];
+        //these are the individual drive module powers
+        double[] pows = new double[3];
+        if(x == 0 && y == 0){
+            //rotate in place
+            for(int i = 0; i < 3; i++){
+                if(turnX > 0){
+                    alphas[i] = 90;
+                }
+                else if(turnX < 0){
+                    alphas[i] = 270;
+                }
+            }
+            //specifically do nothing if both joysticks idle
+        }
+        else{
+            //all other math lives here!
+            //it's getting a little late for me so i'll fill in some more stuff tomorrow morning
         }
     }
 
