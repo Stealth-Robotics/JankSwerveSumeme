@@ -84,7 +84,7 @@ public class SwerveModule {
             //todo check if this maintains power
             driveMotor.setDirection(driveReverse ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         }
-        //now we only will rotate a minimum of 90 degrees in either direction,
+        //now we only will rotate a maximum of 90 degrees in either direction,
         //   reversing the motor if we need to do so.
         rotateByDegree(angleDiff);
     }
