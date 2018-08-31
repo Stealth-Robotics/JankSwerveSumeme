@@ -28,9 +28,9 @@ public class TriSwerveDrive implements Runnable {
             )
     {
         modules = new SwerveModule[3];
-        modules[0] = new SwerveModule(drive1, swerve1, potentiometer1, 0, 18);
-        modules[1] = new SwerveModule(drive2, swerve2, potentiometer2, 120, 18);
-        modules[2] = new SwerveModule(drive3, swerve3, potentiometer3, -120, 18);
+        modules[0] = new SwerveModule(drive1, swerve1, potentiometer1, 0, 18, 0);
+        modules[1] = new SwerveModule(drive2, swerve2, potentiometer2, 120, 18, 0);
+        modules[2] = new SwerveModule(drive3, swerve3, potentiometer3, -120, 18, 0);
 
         this.imu = imu;
 
@@ -40,7 +40,7 @@ public class TriSwerveDrive implements Runnable {
     @Override
     public void run()
     {
-        if (speed != 0)
+        if (rotSpeed == 0)
         {
             double angle;
             if (xSpeed != 0)
@@ -58,7 +58,7 @@ public class TriSwerveDrive implements Runnable {
                 module.setDrivePower(speed);
             }
         }
-        else if (rotSpeed != 0)
+        else if (speed == 0)
         {
             for (SwerveModule module : modules)
             {
@@ -120,14 +120,23 @@ public class TriSwerveDrive implements Runnable {
 
     public double[] findNextVector(SwerveModule module)
     {
-        //definately not complete, do not pay attention to this
-        //am going to finish it, but am tired and going to bed
+        double angle = getHeading() + module.angleFromCenter;
+        double currX = Math.cos(angle) * module.distFromCenter;
+        double currY = Math.sin(angle) * module.distFromCenter;
 
-        double xCoord = module.distFromCenter * Math.cos(rotSpeed / module.distFromCenter) + xSpeed;
-        double yCoord = module.distFromCenter * Math.sin(rotSpeed / module.distFromCenter) + ySpeed;
+        double nextX = module.distFromCenter * Math.cos(rotSpeed / module.distFromCenter + angle) + xSpeed;
+        double nextY = module.distFromCenter * Math.sin(rotSpeed / module.distFromCenter + angle) + ySpeed;
         double[] vector = new double[2];
-        vector[0] = Math.sqrt(xCoord * xCoord + yCoord * yCoord);
-        vector[1] = yCoord / xCoord;
+
+        double diffX = nextX - currX;
+        double diffY = nextY - currY;
+        vector[0] = Math.sqrt(diffX * diffX + diffY * diffY);
+        vector[1] = (diffX != 0) ? Math.atan(diffY / diffX) : ((diffY > 0) ? 90 : -90);
         return vector;
+    }
+
+    private double getHeading()
+    {
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
     }
 }

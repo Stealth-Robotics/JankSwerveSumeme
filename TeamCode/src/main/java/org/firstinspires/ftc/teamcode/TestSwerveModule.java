@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-@TeleOp(name="SuperDuperOpMode_V1", group="Iterative Opmode")
+@TeleOp(name="TestSwerveModule", group="Iterative Opmode")
 public class TestSwerveModule extends OpMode
 {
     // Declare OpMode members.
@@ -20,7 +20,7 @@ public class TestSwerveModule extends OpMode
     @Override
     public void init() {
         module = new SwerveModule((DcMotor) hardwareMap.get("drive1"), (DcMotor) hardwareMap.get("swerve1"),
-                hardwareMap.get(AnalogInput.class, "potentiometer1"), 0, 0);
+                hardwareMap.get(AnalogInput.class, "potentiometer1"), 0, 0, 0);
         telemetry.addData("Status", "Initialized");
     }
 
@@ -44,7 +44,10 @@ public class TestSwerveModule extends OpMode
      * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
      */
     @Override
-    public void loop() {
+    public void loop()
+    {
+        module.rotateToDegree((gamepad1.left_stick_x != 0) ? Math.atan(-gamepad1.left_stick_y / gamepad1.left_stick_x) : ((gamepad1.left_stick_y < 0) ? 90 : -90));
+        module.setDrivePower(-gamepad1.right_stick_y);
     }
 
     /*

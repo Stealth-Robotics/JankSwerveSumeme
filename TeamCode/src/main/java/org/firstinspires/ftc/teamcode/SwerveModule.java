@@ -20,16 +20,20 @@ public class SwerveModule {
     private final double DEGREE_TO_TICKS_FACTOR = TICKS_PER_REV / 360.0;
 
     private final double VOLTAGE_TO_DEGREE_FACTOR = 360.0 / MAX_POTENTIOMETER_VOLTAGE;
-    private double voltageOffset = 0.0;
+    private double voltageOffset;
 
     private final double GEAR_RATIO = 1;
 
-    public final double angleFromCenter;
+    public final double MAX_DRIVE_RPM = 110;
+    public final double WHEEL_DIAMETER_INCHES = 4;
+    public final double TIME_INTERVAL_MS = 20;
+    public final double MAX_DISTANCE_PER_TIME = MAX_DRIVE_RPM / 60000 * WHEEL_DIAMETER_INCHES * Math.PI * TIME_INTERVAL_MS;
 
+    public final double angleFromCenter;
     public final double distFromCenter;
 
     public SwerveModule(DcMotor driveMotor, DcMotor swerveMotor, AnalogInput potentiometer,
-                        double angleFromCenter, double distFromCenter)
+                        double angleFromCenter, double distFromCenter, double voltageOffset)
     {
         this.driveMotor = driveMotor;
         this.driveMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -41,6 +45,8 @@ public class SwerveModule {
 
         this.angleFromCenter = angleFromCenter;
         this.distFromCenter = distFromCenter;
+
+        this.voltageOffset = voltageOffset;
     }
 
     public void rotateByDegree(double angle)
@@ -88,7 +94,10 @@ public class SwerveModule {
         swervePower = power;
     }
 
-    public void zeroSwerveAngle() { voltageOffset = potentiometer.getVoltage(); }
+    public void zeroSwerveAngle()
+    {
+        voltageOffset = potentiometer.getVoltage();
+    }
 
     public double getCurrentAngle()
     {
