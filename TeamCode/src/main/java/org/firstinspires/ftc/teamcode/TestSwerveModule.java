@@ -61,10 +61,12 @@ public class TestSwerveModule extends OpMode
 
             //TLDR this should all work right and is reusable in crab mode. Also be checking these angles,
             //ensure they are as expected and that rotation of the swerve module has right-hand-ruley angles
+            //we could also use atan2(y,x) and subtract 90 when we're done since the angle will get corrected eventually
+            //if this doesn't work as is
             double angle = Math.atan2(x, y);
             angle *= 180.0 / Math.PI; //convert to degrees
             if(y < 0){
-                //if we have a negative y we need to flip our angle
+                //flip our angle if necessary; atan only ranges between +- 90 degrees
                 angle += 180;
             }
             module.rotateToDegree(angle);

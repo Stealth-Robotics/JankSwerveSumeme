@@ -153,7 +153,7 @@ public class TriSwerveDrive implements Runnable {
                     alphas[i] += deltas[i];
                 }
             }
-            //finally, whether we did ocelot math, we need to ensure our angle is in the range 0 to 360
+            //finally, regardless of whether we did ocelot math, we need to ensure our angle is in the range 0 to 360
             //and then apply all of our numbers to the swerves
             for(int i = 0; i < 3; i++){
                 if(alphas[i] < 0){
