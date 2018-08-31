@@ -39,7 +39,7 @@ public final class FileHelper {
         FileInputStream in = null;
         String ret = null;
         try {
-            File file = new File("/files/", "a.txt");
+            File file = new File("/files/", filename);
             if(!file.exists()){
                 file.createNewFile();
             }
