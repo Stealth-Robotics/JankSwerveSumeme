@@ -96,7 +96,7 @@ public class TriSwerveDrive implements Runnable {
         double phi = getHeading();
         //these are for ocelot twists.
         //this describes the offset of each swerve pivot from the vector of motion
-        double[] gammas = new double[] {-phi - gamma, 120 - phi - gamma, 240 - phi - gamma};
+        double[] gammas = new double[] {modules[0].angleFromCenter - phi - gamma, modules[1].angleFromCenter - phi - gamma, modules[2].angleFromCenter - phi - gamma};
         //this is the turn angle of the fictional reference CL wheel.
         //this wheel lies along the vector of motion the same distance from the center as the other wheels
         //we constrain its turn from -45 to 45 mostly because it makes the math nice
@@ -130,9 +130,9 @@ public class TriSwerveDrive implements Runnable {
             //all other math lives here!
             //first step: we ALWAYS do the crab math.
             //set the pivot angles to face the joystick direction
-            alphas[0] = gamma + phi;
-            alphas[1] = gamma + phi - 120;
-            alphas[2] = gamma + phi - 240;
+            alphas[0] = gamma + phi - modules[0].angleFromCenter;
+            alphas[1] = gamma + phi - modules[1].angleFromCenter;
+            alphas[2] = gamma + phi - modules[2].angleFromCenter;
             //all drives receive equal power in crab mode
             for(int i = 0; i < 3; i++){
                 pows[i] = pow;
