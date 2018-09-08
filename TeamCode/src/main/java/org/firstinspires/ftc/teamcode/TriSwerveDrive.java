@@ -90,8 +90,15 @@ public class TriSwerveDrive implements Runnable {
         //reference TestSwerveModule as needed
         double pow = 0;
         //this is the angle of primary joystick. calculate here (make sure to convert to degrees)
-        //reference TestSwerveModule as needed
-        double gamma = 0;
+        double gamma = Math.atan2(-y, x);
+        gamma *= 180.0 / Math.PI; //convert to degrees
+        if(y < 0){
+            //flip our angle if necessary; atan only ranges between +- 90 degrees
+            gamma += 180;
+        }
+        if(gamma < 0) {
+            gamma += 360;
+        }
         //this is the orientation of the robot. make sure it is constrained to the range 0-360
         double phi = getHeading();
         //these are for ocelot twists.

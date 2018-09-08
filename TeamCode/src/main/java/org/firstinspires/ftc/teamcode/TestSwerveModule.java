@@ -52,22 +52,14 @@ public class TestSwerveModule extends OpMode
         double pow = Math.sqrt(x * x + y * y);
         //joystick deadzone
         if(pow > 0.1) {
-            //the angle (forward is 0 degrees, and it still has range -90 to 90)
-            //turns out atan2(x,y) does atan(x/y) but without the division by zero problem
-            //and returns the correct value
-            //I use x/y intentionally because i want 0 degrees along the y axis.
-            //I don't negate y because i want positive angles to be counterclockwise per right-hand rule
-            //(the imu angles are like this as well)
-
-            //TLDR this should all work right and is reusable in crab mode. Also be checking these angles,
-            //ensure they are as expected and that rotation of the swerve module has right-hand-ruley angles
-            //we could also use atan2(y,x) and subtract 90 when we're done since the angle will get corrected eventually
-            //if this doesn't work as is
-            double angle = Math.atan2(x, y);
+            double angle = Math.atan2(-y, x);
             angle *= 180.0 / Math.PI; //convert to degrees
             if(y < 0){
                 //flip our angle if necessary; atan only ranges between +- 90 degrees
                 angle += 180;
+            }
+            if(angle < 0) {
+                angle += 360;
             }
             module.rotateToDegree(angle);
             module.setDrivePower(pow);
