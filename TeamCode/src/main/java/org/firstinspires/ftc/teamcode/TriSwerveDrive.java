@@ -84,39 +84,44 @@ public class TriSwerveDrive implements Runnable {
         //this math is based on the whitepaper at https://team1640.com/wiki/images/3/3e/Tribot_white_paper.pdf
         //let's define some numbers.
 
+        //helpful math consts
+        final double pi = Math.PI;
+        final double degreeToRadian = pi / 180;
+        final double radianToDegree = 180 / pi;
+
         //the swerve pivot setpoints
         double[] alphas = new double[3];
         //this is the base drive power for crab mode, given by joystick. calculate here
-        //reference TestSwerveModule as needed
-        double pow = 0;
-        //this is the angle of primary joystick. calculate here (make sure to convert to degrees)
-        double gamma = Math.atan2(-y, x);
-        gamma *= 180.0 / Math.PI; //convert to degrees
-        if(y < 0){
-            //flip our angle if necessary; atan only ranges between +- 90 degrees
-            gamma += 180;
+        double pow = Math.sqrt(x * x + y * y);
+        //this is the angle of primary joystick, offset by pi/2 so that 0 is forward
+        double gamma = Math.atan2(-y, x) - pi / 2;
+        if(x < 0){
+            //flip our angle if necessary; atan only ranges between +- pi/2
+            gamma += pi;
         }
         if(gamma < 0) {
-            gamma += 360;
+            gamma += 2 * pi;
         }
-        //this is the orientation of the robot. make sure it is constrained to the range 0-360
-        double phi = getHeading();
+        //this is the orientation of the robot. make sure it is constrained to the range 0-2pi
+        double phi = getHeadingRad();
         //these are for ocelot twists.
         //this describes the offset of each swerve pivot from the vector of motion
-        double[] gammas = new double[] {modules[0].angleFromCenter - phi - gamma, modules[1].angleFromCenter - phi - gamma, modules[2].angleFromCenter - phi - gamma};
+        double[] gammas = new double[] {modules[0].angleFromCenter * degreeToRadian - phi - gamma,
+                modules[1].angleFromCenter * degreeToRadian - phi - gamma,
+                modules[2].angleFromCenter * degreeToRadian - phi - gamma};
         //this is the turn angle of the fictional reference CL wheel.
         //this wheel lies along the vector of motion the same distance from the center as the other wheels
-        //we constrain its turn from -45 to 45 mostly because it makes the math nice
+        //we constrain its turn from -pi/4 to pi/4 mostly because it makes the math nice
         //it keeps the turn centerpoint outside of the robot
-        double delta_cl = turnX * 45;
+        double delta_cl = turnX * pi / 4;
         //these are the angular correction needed to perform the ocelot twist
         double[] deltas = new double[3];
         //this is the distance to centerpoint around the snake turn
         //we don't actually perform that motion but we pretend we are
         //calculate here: r_cp = h/tan(delta_cl)
         //h is the distance from the center of the robot to the pivot point of each swerve
-        //keep in mind that java's trig functions use radians
-        double r_cp = 0;
+        double h = 0; //we dunno this number yet
+        double r_cp = h / Math.tan(delta_cl);
         //these are the distances from the individual wheels to the centerpoint
         double[] rs = new double[3];
         //these are the individual drive module powers
@@ -125,11 +130,12 @@ public class TriSwerveDrive implements Runnable {
             //rotate in place
             for(int i = 0; i < 3; i++){
                 if(turnX > 0){
-                    alphas[i] = 90;
+                    alphas[i] = pi / 2;
                 }
                 else if(turnX < 0){
-                    alphas[i] = 270;
+                    alphas[i] = 3 * pi / 2;
                 }
+                pows[i] = turnX;
             }
             //specifically do nothing if both joysticks idle
         }
@@ -137,9 +143,9 @@ public class TriSwerveDrive implements Runnable {
             //all other math lives here!
             //first step: we ALWAYS do the crab math.
             //set the pivot angles to face the joystick direction
-            alphas[0] = gamma + phi - modules[0].angleFromCenter;
-            alphas[1] = gamma + phi - modules[1].angleFromCenter;
-            alphas[2] = gamma + phi - modules[2].angleFromCenter;
+            alphas[0] = gamma + phi - modules[0].angleFromCenter * degreeToRadian;
+            alphas[1] = gamma + phi - modules[1].angleFromCenter * degreeToRadian;
+            alphas[2] = gamma + phi - modules[2].angleFromCenter * degreeToRadian;
             //all drives receive equal power in crab mode
             for(int i = 0; i < 3; i++){
                 pows[i] = pow;
@@ -150,19 +156,28 @@ public class TriSwerveDrive implements Runnable {
                 for(int i = 0; i < 3; i++){
                     //we need to calculate turn radii for each swerve
                     //rs[i] = h * sqrt(1 + 1/tan^2(delta_cl) - 2 * sin(gammas[i])/tan(delta_cl))
-                    //we can then calculate the drive power for each wheel
-                    //r_max is the largest turn radius of the 3
+                    rs[i] = h * Math.sqrt(1 + 1 / Math.pow(Math.tan(delta_cl), 2) - 2 * Math.sin(gammas[i]) / Math.tan(delta_cl));
+                }
+                //we can then calculate the drive power for each wheel
+                //r_max is the largest turn radius of the 3
+                //pows[i] = pow * rs[i]/r_max
+                double r_max = Math.max(rs[0], Math.max(rs[1], rs[2]));
+                for(int i = 0; i < 3; i++) {
                     //pows[i] = pow * rs[i]/r_max
+                    pows[i] = pow * rs[i] / r_max;
                     //our final step is to calculate the turn correction
                     //remember that java uses radians but we want degrees
                     //deltas[i] = sign(delta_cl) * asin(h * cos(gammas[i]) / rs[i])
+                    deltas[i] = Math.signum(delta_cl) * Math.asin(h * Math.cos(gammas[i]) / rs[i]);
                     //then we can apply this correction
                     alphas[i] += deltas[i];
                 }
             }
             //finally, regardless of whether we did ocelot math, we need to ensure our angle is in the range 0 to 360
             //and then apply all of our numbers to the swerves
+            //here is the place to convert into degrees
             for(int i = 0; i < 3; i++){
+                alphas[i] *= radianToDegree;
                 if(alphas[i] < 0){
                     alphas[i] += 360;
                 }
@@ -238,8 +253,13 @@ public class TriSwerveDrive implements Runnable {
         return vector;
     }
 
-    private double getHeading()
+    public double getHeading()
     {
         return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+    }
+
+    private double getHeadingRad()
+    {
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS).firstAngle;
     }
 }
